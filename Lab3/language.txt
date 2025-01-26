@@ -1,8 +1,7 @@
-# Compute the x th Fibonacci number
-def fib(x)
-if x < 3 then
-1
+def greet(name)
+if name == "Alice" || name == "Bob" then
+print("Hello, " + name + "!")
 else
-fib(x-1) + fib(x-2)
-# Calculate the 40th Fibonacci number
-fib(40)
+print("Unknown user: " + name)
+if !(name == "Admin") then
+print("Access denied.")
