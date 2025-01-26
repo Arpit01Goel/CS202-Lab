@@ -1,0 +1,53 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build java",
+            "type": "shell",
+            "command": "javac",
+            "args": [
+              "${fileDirname}/${fileBasenameNoExtension}.java"
+            ],
+            "group": {
+              "kind": "build",
+              "isDefault": false
+            },
+            "problemMatcher": ["$javac"]
+          },
+        {
+            "label": "g++ build active file",
+            "type": "shell",
+            "command": "/usr/bin/g++",
+            "args": [
+                "-g",
+                "${file}",
+                "-o",
+                "${fileDirname}/a.out"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": ["$gcc"],
+            "detail": "Generated task by Debugger."
+        },
+        {
+            "label": "build tests",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "-g",
+                "${workspaceFolder}/test/*.cpp",
+                "-o",
+                "${workspaceFolder}/test/testExecutable"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": ["$gcc"]
+        }
+    ]
+}
