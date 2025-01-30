@@ -1,7 +1,8 @@
-def greet(name)
-if name == "Alice" || name == "Bob" then
-print("Hello, " + name + "!")
+# Compute the x th Fibonacci number
+def fib(x)
+if x < 3 then
+1
 else
-print("Unknown user: " + name)
-if !(name == "Admin") then
-print("Access denied.")
+fib(x-1) + fib(x-2)
+# Calculate the 40th Fibonacci number
+fib(40)
