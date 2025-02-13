@@ -13,7 +13,7 @@ using namespace std;
 
 set<string> keywords = {"def", "then", "if", "else", "then", "while", "do"};
 set<string> operators = {"+", "-",  "*", "/",  "<", "<=",  ">",  ">=",
-                         "=", "==", "!", "||", "^", ">>>", "<<<"};
+                         "=", "==", "!", "||", "^", ">>>", "<<<","+=","-=","*=","/=","%=","%","!=","&&"};
 set<string> functions = {"print"};
 set<string> esc_seq = {"\n", "\t", "\r", "\b", "\f", "\"", "\'", "\\"};
 bool check_operator(string str);
@@ -26,12 +26,38 @@ void handle_word(string &str);
 void get_tok(string filename) {
   ifstream in(filename);
   ofstream f("output.txt");
+  bool in_multiline_comment = false;
   while (!in.eof()) {
     string text;
     string expr;
     getline(in, text);
     cout << endl << endl;
     cout << BLUEBOLD << text << RESET << endl;
+
+    if (in_multiline_comment) {
+      size_t end_comment = text.find("*/");
+      if (end_comment != string::npos) {
+        in_multiline_comment = false;
+        text = text.substr(end_comment + 2);
+      } else {
+        continue;
+      }
+    }
+
+    if (text.find("/*") != string::npos) {
+      size_t start_comment = text.find("/*");
+      size_t end_comment = text.find("*/", start_comment + 2);
+      if (end_comment != string::npos) {
+        text.erase(start_comment, end_comment - start_comment + 2);
+      } else {
+        text.erase(start_comment);
+        in_multiline_comment = true;
+      }
+    }
+
+    if (text.empty()) {
+      continue;
+    }
     if (text[0] == '#') {
       // its comment
       cout << "whole line is comment" << endl;
@@ -39,14 +65,21 @@ void get_tok(string filename) {
     } else {
       string word = "";
       for (int i = 0; i < text.size(); i++) {
+        if (i<text.size()-1 && text.substr(i,2)=="//") {
+          handle_word(word);
+          break;
+        }
+        
         switch (text[i]) {
+        
         case ' ':
           expr += word;
           expr += " ";
           handle_word(word);
 
           break;
-
+        
+        
         case '(':
           handle_word(word);
           cout << "lparenthesis: (" << endl;
@@ -67,22 +100,22 @@ void get_tok(string filename) {
           expr += "\"";
           // init string
           i++;
-          while (i < text.size() - 1 && text[i] != '"') {
-            if (text[i] == '\\' && i<text.size() &&  text[i+1]==' ') {
-              cout << RED << "invalid escape sequence" << endl;
-              cout << text << RESET << endl;
-              exit(402);
+          while (i < text.size()  && text[i] != '"') {
+            if (text[i] == '\\') {
+              if (i+1 < text.size() && check_escape_seq("\\"+string(1,text[i+1]))){
+                word += text[i++];
+                word += text[i];
+              }else {
+                cout << RED << "invalid esc sequence" << endl;
+                cout << text << RESET << endl;
+                exit(402);
+              }
+            }else {
+              word+= text[i];
             }
-            if (text[i] == '\\' &&
-                (i == text.size() - 1 ||
-                 check_escape_seq("\\" + string(1, text[i + 1])))) {
-              cout << RED << "invalid escape sequence" << endl;
-              cout << text << RESET << endl;
-              exit(402);
-            }
-            word += text[i++];
+            i++;
           }
-          if (i == text.size() || text[i-1]=='\\' ) {
+          if (i == text.size() || text[i]!='"' ) {
             cout << RED << "invalid string , unclosed quotes : " << endl;
             cout << text << RESET << endl;
             exit(401);
@@ -94,10 +127,15 @@ void get_tok(string filename) {
             cout << "string closing: \"" << endl;
             word = "";
           } else {
-            cout << RED << "I give up : " << RESET << word << endl;
+            cout << RED << "I give up on this : " << RESET << word << endl;
             exit(500);
           }
           // cout << "here" << endl;
+          break;
+        case ';': 
+          expr += word;
+          handle_word(word);
+          cout << "statement closing : ;" << endl;
           break;
         default:
           // cout << text[i] << endl;
