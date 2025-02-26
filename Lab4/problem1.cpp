@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 //===----------------------------------------------------------------------===//
 // Lexer
@@ -89,6 +90,7 @@ namespace {
 class ExprAST {
 public:
   virtual ~ExprAST() = default;
+  virtual void print(int indent = 0) const = 0;
 };
 
 /// NumberExprAST - Expression class for numeric literals like "1.0".
@@ -97,6 +99,9 @@ class NumberExprAST : public ExprAST {
 
 public:
   NumberExprAST(double Val) : Val(Val) {}
+  void print(int indent = 0) const override {
+    std::cout << std::string(indent, ' ') << "NumberExprAST: " << Val << "\n";
+  }
 };
 
 /// VariableExprAST - Expression class for referencing a variable, like "a".
@@ -105,6 +110,9 @@ class VariableExprAST : public ExprAST {
 
 public:
   VariableExprAST(const std::string &Name) : Name(Name) {}
+  void print(int indent = 0) const override {
+    std::cout << std::string(indent, ' ') << "VariableExprAST: " << Name << "\n";
+  }
 };
 
 /// BinaryExprAST - Expression class for a binary operator.
@@ -116,6 +124,11 @@ public:
   BinaryExprAST(char Op, std::unique_ptr<ExprAST> LHS,
                 std::unique_ptr<ExprAST> RHS)
       : Op(Op), LHS(std::move(LHS)), RHS(std::move(RHS)) {}
+  void print(int indent = 0) const override {
+    std::cout << std::string(indent, ' ') << "BinaryExprAST: " << Op << "\n";
+    LHS->print(indent + 2);
+    RHS->print(indent + 2);
+  }
 };
 
 /// CallExprAST - Expression class for function calls.
@@ -127,6 +140,12 @@ public:
   CallExprAST(const std::string &Callee,
               std::vector<std::unique_ptr<ExprAST>> Args)
       : Callee(Callee), Args(std::move(Args)) {}
+  void print(int indent = 0) const override {
+    std::cout << std::string(indent, ' ') << "CallExprAST: " << Callee << "\n";
+    for (const auto &Arg : Args) {
+      Arg->print(indent + 2);
+    }
+  }
 };
 
 /// PrototypeAST - This class represents the "prototype" for a function,
@@ -141,6 +160,13 @@ public:
       : Name(Name), Args(std::move(Args)) {}
 
   const std::string &getName() const { return Name; }
+
+  void print(int indent = 0) const {
+    std::cout << std::string(indent, ' ') << "PrototypeAST: " << Name << "\n";
+    for (const auto &Arg : Args) {
+      std::cout << std::string(indent + 2, ' ') << Arg << "\n";
+    }
+  }
 };
 
 /// FunctionAST - This class represents a function definition itself.
@@ -152,6 +178,12 @@ public:
   FunctionAST(std::unique_ptr<PrototypeAST> Proto,
               std::unique_ptr<ExprAST> Body)
       : Proto(std::move(Proto)), Body(std::move(Body)) {}
+
+  void print(int indent = 0) const {
+    std::cout << std::string(indent, ' ') << "FunctionAST:\n";
+    Proto->print(indent + 2);
+    Body->print(indent + 2);
+  }
 };
 
 } // end anonymous namespace
@@ -346,8 +378,11 @@ static std::unique_ptr<FunctionAST> ParseDefinition() {
   if (!Proto)
     return nullptr;
 
-  if (auto E = ParseExpression())
-    return std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
+  if (auto E = ParseExpression()) {
+    auto Func = std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
+    Func->print(); // Print the parsed function
+    return Func;
+  }
   return nullptr;
 }
 
@@ -357,7 +392,9 @@ static std::unique_ptr<FunctionAST> ParseTopLevelExpr() {
     // Make an anonymous proto.
     auto Proto = std::make_unique<PrototypeAST>("__anon_expr",
                                                 std::vector<std::string>());
-    return std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
+    auto Func = std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
+    Func->print(); // Print the parsed top-level expression
+    return Func;
   }
   return nullptr;
 }
@@ -431,9 +468,14 @@ int main() {
   // Install standard binary operators.
   // 1 is lowest precedence.
   BinopPrecedence['<'] = 10;
+  BinopPrecedence['>'] = 10;
   BinopPrecedence['+'] = 20;
   BinopPrecedence['-'] = 20;
-  BinopPrecedence['*'] = 40; // highest.
+  BinopPrecedence['*'] = 40; 
+  BinopPrecedence['/'] = 40; 
+  BinopPrecedence['%'] = 40; // highest.
+
+
 
   // Prime the first token.
   fprintf(stderr, "ready> ");
