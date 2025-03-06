@@ -1,0 +1,6 @@
+(define (square x)(* x x))
+(define (apply-twice f a)
+    (f (f a))
+)
+(display (apply-twice square 3))
+(newline)
